@@ -10,7 +10,9 @@ from blobstash.docstore.query import LuaScript
 import requests
 
 
-class DocStoreID:
+class ID:
+    """ID holds the document ID along with metadata."""
+
     def __init__(self, data):
         self._id = data.get('_id')
         self._created = data.get('_created')
@@ -19,6 +21,8 @@ class DocStoreID:
 
     @classmethod
     def inject(cls, data):
+        """Extracts ID infos from the document special keys and remove them, replacing
+        `_id` with an instance of `ID`."""
         doc_id = cls(data)
         if doc_id._id:
             del data['_id']
@@ -52,13 +56,15 @@ class DocStoreID:
         return dt.astimezone()
 
     def __repr__(self):
-        return '<DocStoreID _id={!r}>'.format(self._id)
+        return '<blobstash.docstore.ID _id={!r}>'.format(self._id)
 
     def __str__(self):
         return self._id
 
 
-class DocStoreCursor:
+class Cursor:
+    """Cursor is the query iterator."""
+
     def __init__(self, collection, query, resp, limit=None):
         self._collection = collection
         self._query = query
@@ -68,7 +74,7 @@ class DocStoreCursor:
     def _parse_resp(self, resp):
         self.docs = []
         for raw_doc in resp['data']:
-            DocStoreID.inject(raw_doc)
+            ID.inject(raw_doc)
             self.docs.append(raw_doc)
 
         pagination = resp['pagination']
@@ -90,13 +96,14 @@ class DocStoreCursor:
             return next(self)
 
     def __repr__(self):
-        return '<DocStoreCursor collection={!r},>'.format(self._collection.name)
+        return '<blobstash.docstore.Cursor collection={!r}>'.format(self._collection.name)
 
     def __str__(self):
         return self.__repr__()
 
 
-class DocStoreCollection:
+class Collection:
+    """Collection represents a collection (analog to a database)."""
     def __init__(self, client, name):
         self._client = client
         self.name = name
@@ -114,18 +121,18 @@ class DocStoreCollection:
             json=doc,
         )
         r.raise_for_status()
-        doc_id = DocStoreID.inject(r.json())
+        doc_id = ID.inject(r.json())
         return doc_id
 
     def get_by_id(self, _id):
-        if isinstance(_id, DocStoreID):
+        if isinstance(_id, ID):
             _id = _id.id()
 
         resp = self._client._get('/api/docstore/'+self.name+'/'+_id).json()
         doc = resp['data']
         # TODO(tsileo): handle pointers
-        _id = DocStoreID.inject(doc)
-        return doc, _id
+        _id = ID.inject(doc)
+        return doc
 
     def _query(self, query='', script='', limit=50, cursor=''):
         if isinstance(query, LuaScript):
@@ -146,7 +153,7 @@ class DocStoreCollection:
         return resp
 
     def query(self, query='', script='', limit=50, cursor=''):
-        return DocStoreCursor(self, query, self._query(
+        return Cursor(self, query, self._query(
             query,
             script=script,
             limit=limit,
@@ -157,8 +164,16 @@ class DocStoreCollection:
         iterator = self.query(query, script=script)
         return next(iterator)
 
+    def __repr__(self):
+        return '<blobstash.docstore.Collection name={!r}>'.format(self.name)
+
+    def __str__(self):
+        return self.__repr__()
+
 
 class DocStoreClient:
+    """BlobStash DocStore client."""
+
     def __init__(self, client):
         self._client = client
 
@@ -169,4 +184,10 @@ class DocStoreClient:
         return self._collection(name)
 
     def _collection(self, name):
-        return DocStoreCollection(self._client, name)
+        return Collection(self._client, name)
+
+    def __repr__(self):
+        return '<blobstash.docstore.DocStoreClient>'
+
+    def __str__(self):
+        return self.__repr__()
