@@ -136,8 +136,8 @@ class Collection:
 
     def _query(self, query='', script='', limit=50, cursor=''):
         if isinstance(query, LuaScript):
-            query = ''
             script = query.script
+            query = ''
         elif isinstance(query, (LogicalOperator, Not)):
             query = str(query)
 

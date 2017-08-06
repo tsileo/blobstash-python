@@ -13,7 +13,7 @@ Client for [BlobStash](https://github.com/tsileo/blobstash) JSON document store.
 >>> col = client.my_collection
 >>> col
 <blobstash.docstore.Collection name='my_collection'>
-# Insert data
+>>> # Insert data
 >>> k = col.insert({'key': 10, 'k1': True, 'k2': None, 'l': [1, 2, 'c']})
 >>> k
 <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>
@@ -30,7 +30,7 @@ Client for [BlobStash](https://github.com/tsileo/blobstash) JSON document store.
  'k2': None,
  'key': 10,
  'l': [1, 2, 'c']}
->>> # Using Path, you can query using basic dot notation and python values directly
+>>> # Using Path, you can make query using basic dot notation and python values directly
 >>> for doc in col.query(Path('key') == 10):
 ...     print(doc)
 {'k1': True, 'k2': None, 'key': 10, 'l': [1, 2, 'c'], '_id': <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>}
@@ -47,10 +47,23 @@ Client for [BlobStash](https://github.com/tsileo/blobstash) JSON document store.
 ...     print(doc)
 {'k1': True, 'k2': None, 'key': 10, 'l': [1, 2, 'c'], '_id': <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>}
 >>> # Raw Lua query
->>> for doc in col.query("doc.k1 == true"):
+>>> 1. in shortcut mode
+>>> for doc in col.query("doc.k1 == true nad doc.key ~= nil"):
 ...     print(doc)
 {'k1': True, 'k2': None, 'key': 10, 'l': [1, 2, 'c'], '_id': <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>}
-
+>>> # 2. full Lua script
+>>> from blobstash.docstore.query import LuaScript
+>>> script = LuaScript("""
+... return function(doc)
+...   if doc.key == 10 then
+...     return true
+...   end
+...   return false
+...end
+... """)
+>>> for doc in col.query(script):
+...     print(doc)
+{'k1': True, 'k2': None, 'key': 10, 'l': [1, 2, 'c'], '_id': <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>}
 ```
 
 ## LICENSE
