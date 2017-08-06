@@ -2,6 +2,7 @@ from urllib.parse import urljoin
 from datetime import datetime
 from datetime import timezone
 
+from blobstash.driver.client import Client
 from blobstash.docstore.query import Path  # noqa: unused-import  # make it accessible
 from blobstash.docstore.query import LogicalOperator
 from blobstash.docstore.query import Not
@@ -174,8 +175,8 @@ class Collection:
 class DocStoreClient:
     """BlobStash DocStore client."""
 
-    def __init__(self, client):
-        self._client = client
+    def __init__(self, base_url=None, api_key=None):
+        self._client = Client(base_url=base_url, api_key=api_key)
 
     def __getitem__(self, key):
         return self._collection(key)

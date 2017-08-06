@@ -7,9 +7,8 @@ Client for [BlobStash](https://github.com/tsileo/blobstash) JSON document store.
 ## Examples
 
 ```python
->>> from blobstash.driver.client import Client
 >>> from blobstash.docstore import DocStoreClient, Path
->>> client = DocStoreClient(Client(api_key='123'))
+>>> client = DocStoreClient(api_key='123')
 >>> col = client.my_collection
 >>> col
 <blobstash.docstore.Collection name='my_collection'>
@@ -59,7 +58,7 @@ Client for [BlobStash](https://github.com/tsileo/blobstash) JSON document store.
 ...     return true
 ...   end
 ...   return false
-...end
+... end
 ... """)
 >>> for doc in col.query(script):
 ...     print(doc)

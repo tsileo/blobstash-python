@@ -10,6 +10,7 @@ setup(
     packages=['blobstash.docstore'],
     license='MIT',
     install_requires=[
+        'blobstash-driver',
         'requests',
     ],
 )
