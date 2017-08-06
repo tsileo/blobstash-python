@@ -46,8 +46,8 @@ Client for [BlobStash](https://github.com/tsileo/blobstash) JSON document store.
 ...     print(doc)
 {'k1': True, 'k2': None, 'key': 10, 'l': [1, 2, 'c'], '_id': <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>}
 >>> # Raw Lua query
->>> 1. in shortcut mode
->>> for doc in col.query("doc.k1 == true nad doc.key ~= nil"):
+>>> # 1. in shortcut mode
+>>> for doc in col.query("doc.k1 == true and doc.key ~= nil"):
 ...     print(doc)
 {'k1': True, 'k2': None, 'key': 10, 'l': [1, 2, 'c'], '_id': <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>}
 >>> # 2. full Lua script
