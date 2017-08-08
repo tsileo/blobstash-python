@@ -12,5 +12,6 @@ setup(
     install_requires=[
         'blobstash-driver',
         'requests',
+        'jsonpatch',
     ],
 )

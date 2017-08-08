@@ -31,6 +31,39 @@ class Not:
         return 'not ({})'.format(str(self.clause))
 
 
+class _MetaQuery(type):
+    def __getitem__(cls, key):
+        if isinstance(key, int):
+            return cls('[{}]'.format(key))
+        return cls('.{}'.format(key))
+
+
+class Q(metaclass=_MetaQuery):
+    """Allow for query:
+
+    >>> Q['persons'][0]['name'] == 'thomas'
+
+    """
+
+    def __init__(self, path=None):
+        self._path = path or ''
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            self._path = self._path + '[{}]'.format(key)
+            return self
+
+        self._path = self._path + '.{}'.format(key)
+        return self
+
+    def path(self):
+        return self._path
+
+    def __repr__(self):
+        return 'Q(path={})'.format(self._path)
+
+
+
 class Path:
     def __init__(self, path):
         self.path = path

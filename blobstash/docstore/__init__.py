@@ -1,4 +1,5 @@
 from urllib.parse import urljoin
+from copy import deepcopy
 from datetime import datetime
 from datetime import timezone
 
@@ -9,6 +10,34 @@ from blobstash.docstore.query import Not
 from blobstash.docstore.query import LuaScript
 
 import requests
+import jsonpatch
+
+
+# TODO(tsileo): cache all the doc for generating JSON patch on update (subclass dict to cache it only
+# on edit?
+_DOC_CACHE = {}
+
+
+class _Document(dict):
+    """Document is a dict subclass for document returned by the API, keep track of the ETag, and the document for the
+    JSON Patch generation if needed."""
+
+    def __setitem__(self, key, val):
+        _id = self.get('_id')
+        if _id is None:
+            raise Exception('missing _id')
+
+
+        if _id not in _DOC_CACHE:
+            doc = self.copy()
+            del doc['_id']
+            _DOC_CACHE[_id] = deepcopy(doc)
+
+        dict.__setitem__(self, key, val)
+
+    def __repr__(self):
+        dictrepr = dict.__repr__(self)
+        return '%s(%s)' % (type(self).__name__, dictrepr)
 
 
 class ID:
@@ -56,6 +85,20 @@ class ID:
         dt = dt.replace(tzinfo=timezone.utc)
         return dt.astimezone()
 
+    def __hash__(self):
+        return hash((self._hash, self._id))
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return (self._hash, self._id) == (other.hash(), other.id())
+
+    def __ne__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return not self.__eq__(other)
+
     def __repr__(self):
         return '<blobstash.docstore.ID _id={!r}>'.format(self._id)
 
@@ -64,7 +107,7 @@ class ID:
 
 
 class Cursor:
-    """Cursor is the query iterator."""
+    """Cursor is the query iterator, take care of going through the pagination."""
 
     def __init__(self, collection, query, resp, limit=None):
         self._collection = collection
@@ -76,7 +119,7 @@ class Cursor:
         self.docs = []
         for raw_doc in resp['data']:
             ID.inject(raw_doc)
-            self.docs.append(raw_doc)
+            self.docs.append(_Document(raw_doc))
 
         pagination = resp['pagination']
         self.has_more = pagination['has_more']
@@ -123,7 +166,30 @@ class Collection:
         )
         r.raise_for_status()
         doc_id = ID.inject(r.json())
+
+        rdoc = doc.copy()
+        del rdoc['_id']
+
+        _DOC_CACHE[doc_id] = deepcopy(rdoc)
+
         return doc_id
+
+    def update(self, doc):
+        _id = doc.get('_id')
+        if _id is None:
+            raise Exception('missing _id')
+
+        if _id in _DOC_CACHE:
+            src = _DOC_CACHE[_id]
+            p = jsonpatch.make_patch(src, doc)
+
+            js = p.to_string()
+
+            # special status on 412
+            # (If-Match', _id.hash())
+            # TODO(tsileo): a patch (JSON PATCH partial update, consistent)
+        else:
+            # TODO(tsileo): POST, replace the existing document (we can use the hash as an ETag too here)
 
     def get_by_id(self, _id):
         if isinstance(_id, ID):
@@ -131,14 +197,18 @@ class Collection:
 
         resp = self._client._get('/api/docstore/'+self.name+'/'+_id).json()
         doc = resp['data']
-        # TODO(tsileo): handle pointers
         _id = ID.inject(doc)
-        return doc
+
+        # TODO(tsileo): handle pointers
+
+        return _Document(doc)
 
     def _query(self, query='', script='', limit=50, cursor=''):
+        # Handle raw Lua script
         if isinstance(query, LuaScript):
             script = query.script
             query = ''
+        # Handle default query operators
         elif isinstance(query, (LogicalOperator, Not)):
             query = str(query)
 
@@ -151,6 +221,7 @@ class Collection:
                 limit=str(limit),
             ),
         ).json()
+
         return resp
 
     def query(self, query='', script='', limit=50, cursor=''):
@@ -186,6 +257,14 @@ class DocStoreClient:
 
     def _collection(self, name):
         return Collection(self._client, name)
+
+    def collections(self):
+        """Returns all the available collections."""
+        collections = []
+        resp = self._client._get('/api/docstore/')
+        for col in resp['collections']:
+            collections.append(self._collection(col))
+        return collections
 
     def __repr__(self):
         return '<blobstash.docstore.DocStoreClient>'
