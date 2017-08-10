@@ -7,7 +7,7 @@ Client for [BlobStash](https://github.com/tsileo/blobstash) JSON document store.
 ## Examples
 
 ```python
->>> from blobstash.docstore import DocStoreClient, Path
+>>> from blobstash.docstore import DocStoreClient, Path, Q
 >>> client = DocStoreClient(api_key='123')
 >>> col = client.my_collection
 >>> col
@@ -29,20 +29,20 @@ Client for [BlobStash](https://github.com/tsileo/blobstash) JSON document store.
  'k2': None,
  'key': 10,
  'l': [1, 2, 'c']}
->>> # Using Path, you can make query using basic dot notation and python values directly
->>> for doc in col.query(Path('key') == 10):
+# Native Python query using Q
+>>> for doc in col.query(Q['key'] == 10):
 ...     print(doc)
 {'k1': True, 'k2': None, 'key': 10, 'l': [1, 2, 'c'], '_id': <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>}
->>> for doc in col.query(Path('key') > 10):
+>>> for doc in col.query(Q['key'] > 10):
 ...     print(doc)
 
 >>> for doc in col.query():
 ...     print(doc)
 {'k1': True, 'k2': None, 'key': 10, 'l': [1, 2, 'c'], '_id': <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>}
->>> for doc in col.query(Path('l').contains(1)):
+>>> for doc in col.query(Q['l'].contains(1)):
 ...     print(doc)
 {'k1': True, 'k2': None, 'key': 10, 'l': [1, 2, 'c'], '_id': <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>}
->>> for doc in col.query(Path('l[0]') == 1):
+>>> for doc in col.query(Q['l'][0] == 1):
 ...     print(doc)
 {'k1': True, 'k2': None, 'key': 10, 'l': [1, 2, 'c'], '_id': <blobstash.docstore.ID _id='14d854f6e9ee37a9cd8c1ffc'>}
 >>> # Raw Lua query
