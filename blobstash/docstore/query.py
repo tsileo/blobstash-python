@@ -7,6 +7,12 @@ class LuaScript:
         self.script = script
 
 
+class LuaStoredQuery:
+    def __init__(self, name, query_args):
+        self.name = name
+        self.args = query_args
+
+
 class LogicalOperator:
     def __init__(self, *args):
         self.clauses = args

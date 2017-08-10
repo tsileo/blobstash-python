@@ -8,10 +8,12 @@ from blobstash.base.client import Client
 from blobstash.base.error import BlobStashError
 from blobstash.docstore.attachment import add_attachment
 from blobstash.docstore.attachment import Attachment
+from blobstash.docstore.query import Q  # noqa: unused-import
 from blobstash.docstore.query import LogicalOperator
 from blobstash.docstore.query import Not
 from blobstash.docstore.query import LuaScript
 from blobstash.docstore.query import LuaShortQuery
+from blobstash.docstore.query import LuaStoredQuery
 from blobstash.docstore.query import LuaShortQueryComplex
 from blobstash.filetree import Node
 
@@ -179,6 +181,7 @@ class Cursor:
 
 
 def _fill_pointers(doc, pointers):
+    """Replace the pointer by actual object representation."""
     for k, v in doc.items():
         if isinstance(v, str):
             if v.startswith('@filetree/ref:'):
@@ -294,12 +297,16 @@ class Collection:
 
             self._client.request('DELETE', '/api/docstore/'+self.name+'/'+_id)
 
-    def _query(self, query='', script='', limit=50, cursor=''):
+    def _query(self, query='', script='', stored_query='', stored_query_args='', limit=50, cursor=''):
         # XXX(tsileo): intelligent limit (i.e. limit=1000, but want to query them 100 by 100)
         # Handle raw Lua script
         if isinstance(query, LuaScript):
             script = query.script
             query = ''
+        elif isinstance(query, LuaStoredQuery):
+            stored_query = query.name
+            stored_query_args = json.dumps(query.args)
+
         # Handle default query operators
         elif isinstance(query, (LogicalOperator, Not, LuaShortQueryComplex, LuaShortQuery)):
             query = str(query)
@@ -312,6 +319,8 @@ class Collection:
             params=dict(
                 query=query,
                 script=script,
+                stored_query_args=stored_query_args,
+                stored_query=stored_query,
                 cursor=cursor,
                 limit=str(limit),
             ),
@@ -319,11 +328,13 @@ class Collection:
 
         return resp
 
-    def query(self, query='', script='', limit=50, cursor=''):
+    def query(self, query='', script='', stored_query='', stored_query_args='', limit=50, cursor=''):
         """Query the collection and return an iterable cursor."""
         return Cursor(self, query, self._query(
             query,
             script=script,
+            stored_query=stored_query,
+            stored_query_args=stored_query_args,
             limit=limit,
             cursor=cursor,
         ))
