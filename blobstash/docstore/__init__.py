@@ -1,19 +1,32 @@
 from copy import deepcopy
 from datetime import datetime
 from datetime import timezone
+from pathlib import Path
+import json
 
 from blobstash.base.client import Client
 from blobstash.base.error import BlobStashError
+from blobstash.docstore.attachment import add_attachment
+from blobstash.docstore.attachment import Attachment
 from blobstash.docstore.query import LogicalOperator
 from blobstash.docstore.query import Not
 from blobstash.docstore.query import LuaScript
 from blobstash.docstore.query import LuaShortQuery
 from blobstash.docstore.query import LuaShortQueryComplex
+from blobstash.filetree import Node
 
 import jsonpatch
 
 # Keep a local cache of the docs to be able to generate a JSON Patch
 _DOC_CACHE = {}
+
+
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Attachment):
+            return obj.pointer
+        else:
+            return super().default(obj)
 
 
 class DocStoreError(BlobStashError):
@@ -33,7 +46,8 @@ class _Document(dict):
     JSON Patch generation if needed."""
 
     def __setitem__(self, key, val):
-        self.checkpoint()
+        if key != '_id':
+            self.checkpoint()
         dict.__setitem__(self, key, val)
 
     def checkpoint(self):
@@ -133,8 +147,10 @@ class Cursor:
 
     def _parse_resp(self, resp):
         self.docs = []
+        pointers = resp['pointers']
         for raw_doc in resp['data']:
             ID.inject(raw_doc)
+            _fill_pointers(raw_doc, pointers)
             self.docs.append(_Document(raw_doc))
 
         pagination = resp['pagination']
@@ -160,6 +176,15 @@ class Cursor:
 
     def __str__(self):
         return self.__repr__()
+
+
+def _fill_pointers(doc, pointers):
+    for k, v in doc.items():
+        if isinstance(v, str):
+            if v.startswith('@filetree/ref:'):
+                doc[k] = Attachment(v, Node.from_resp(pointers[v]))
+        elif isinstance(v, dict):
+            _fill_pointers(v, pointers)
 
 
 class Collection:
@@ -206,7 +231,8 @@ class Collection:
         del doc['_id']
         if _id in _DOC_CACHE:
             src = _DOC_CACHE[_id]
-            p = jsonpatch.make_patch(src, doc)
+            pdoc = json.loads(json.dumps(doc, cls=JSONEncoder))
+            p = jsonpatch.make_patch(src, pdoc)
             del _DOC_CACHE[_id]
 
             js = p.to_string()
@@ -245,9 +271,9 @@ class Collection:
 
         resp = self._client.request('GET', '/api/docstore/'+self.name+'/'+_id)
         doc = resp['data']
+        pointers = resp['pointers']
         _id = ID.inject(doc)
-
-        # TODO(tsileo): handle pointers
+        _fill_pointers(doc, pointers)
 
         return _Document(doc)
 
@@ -319,15 +345,8 @@ class Collection:
 class DocStoreClient:
     """BlobStash DocStore client."""
 
-    def __init__(self, base_url=None, api_key=None, client=None):
-        if client:
-            if not isinstance(client, Client):
-                raise DocStoreError('Client must be a `blobstash.base.client.Client` instance')
-
-            self._client = client
-            return
-
-        self._client = Client(base_url=base_url, api_key=api_key)
+    def __init__(self, base_url=None, api_key=None):
+        self._client = Client(base_url=base_url, api_key=api_key, json_encoder=JSONEncoder)
 
     def __getitem__(self, key):
         return self._collection(key)
@@ -349,6 +368,19 @@ class DocStoreClient:
         for col in resp['collections']:
             collections.append(self._collection(col))
         return collections
+
+    def fadd_attachment(self, name=None, fileobj=None, content_type=None):
+        return add_attachment(self._client, name, fileobj, content_type)
+
+    def add_attachment(self, path):
+        """Upload the file at path, and return the key to embed the file as an attachment/filetree pointer.
+
+        >>> doc['my_super_text_file'] = client.add_attachment('/path/to/my/text_file.txt')
+
+        """
+        name = Path(path).name
+        with open(path, 'rb') as f:
+            return add_attachment(self._client, name, f, None)
 
     def __repr__(self):
         return 'blobstash.docstore.DocStoreClient(base_url={!r})'.format(self._client.base_url)

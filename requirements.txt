@@ -1,3 +1,4 @@
 blobstash-base
+blobstash-filetree
 requests
 jsonpatch

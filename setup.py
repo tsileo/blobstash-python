@@ -11,6 +11,7 @@ setup(
     license='MIT',
     install_requires=[
         'blobstash-driver',
+        'blobstash-filetree',
         'requests',
         'jsonpatch',
     ],
