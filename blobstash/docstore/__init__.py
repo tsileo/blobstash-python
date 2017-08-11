@@ -7,6 +7,7 @@ import json
 from blobstash.base.client import Client
 from blobstash.base.error import BlobStashError
 from blobstash.docstore.attachment import add_attachment
+from blobstash.docstore.attachment import get_attachment
 from blobstash.docstore.attachment import Attachment
 from blobstash.docstore.query import Q  # noqa: unused-import
 from blobstash.docstore.query import LogicalOperator
@@ -18,6 +19,8 @@ from blobstash.docstore.query import LuaShortQueryComplex
 from blobstash.filetree import Node
 
 import jsonpatch
+
+# TODO(tsileo): list old document version
 
 # Keep a local cache of the docs to be able to generate a JSON Patch
 _DOC_CACHE = {}
@@ -392,6 +395,23 @@ class DocStoreClient:
         name = Path(path).name
         with open(path, 'rb') as f:
             return add_attachment(self._client, name, f, None)
+
+    def fget_attachment(self, attachment):
+        """Returns a fileobj (that needs to be closed) with the content off the attachment."""
+        return get_attachment(self._client, attachment)
+
+    def get_attachment(self, attachment, path):
+        with open(path, 'wb+') as dst:
+            f = self.fget_attachment(attachment)
+            try:
+                while 1:
+                    buf = f.read(4096)
+                    if not buf:
+                        break
+                    dst.write(buf)
+            except:
+                f.close()
+                raise
 
     def __repr__(self):
         return 'blobstash.docstore.DocStoreClient(base_url={!r})'.format(self._client.base_url)

@@ -21,3 +21,8 @@ def add_attachment(client, name, fileobj, content_type=None):
     node = FileTreeClient(client=client).fput_node(name, fileobj, content_type)
     pointer = _FILETREE_POINTER_FMT.format(node.ref)
     return Attachment(pointer, node)
+
+
+def get_attachment(client, attachment):
+    """Returns a fileobj (that needs to be closed) with the content off the attachment."""
+    return FileTreeClient(client=client).fget_node(attachment.data)
