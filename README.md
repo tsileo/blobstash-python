@@ -1,6 +1,9 @@
 # BlobStash Python DocStore
 
-Python 3.4+ only.
+[![Travis](https://img.shields.io/travis/tsileo/blobstash-python-docstore.svg?maxAge=2592000)](https://travis-ci.org/tsileo/blobstash-python-docstore)
+&nbsp; &nbsp; [![PyPI](https://img.shields.io/pypi/v/blobstash-docstore.svg)](https://pypi.python.org/pypi/blobstash-docstore)
+&nbsp; &nbsp; [![PyPI](https://img.shields.io/pypi/pyversions/blobstash-docstore.svg)](https://pypi.python.org/pypi/blobstash-docstore)
+&nbsp; &nbsp;[![License](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/tsileo/blobstash-python-docstore/master/LICENSE)
 
 Client for [BlobStash](https://github.com/tsileo/blobstash) JSON document store.
 
