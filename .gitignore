@@ -1,3 +1,6 @@
+_build/
+.cache/
+docs/_build
 __pycache__
 .ropeproject
 build/
