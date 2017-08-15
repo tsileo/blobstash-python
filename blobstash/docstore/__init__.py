@@ -5,11 +5,13 @@ from pathlib import Path
 import json
 
 from blobstash.base.client import Client
-from blobstash.base.error import BlobStashError
 from blobstash.base.iterator import BasePaginationIterator
 from blobstash.docstore.attachment import add_attachment
-from blobstash.docstore.attachment import get_attachment
+from blobstash.docstore.attachment import fadd_attachment
+from blobstash.docstore.attachment import get_attachment as get_attach
+from blobstash.docstore.attachment import fget_attachment
 from blobstash.docstore.attachment import Attachment
+from blobstash.docstore.error import DocStoreError
 from blobstash.docstore.query import Q  # noqa: unused-import
 from blobstash.docstore.query import LogicalOperator
 from blobstash.docstore.query import Not
@@ -31,10 +33,6 @@ class JSONEncoder(json.JSONEncoder):
             return obj.pointer
         else:
             return super().default(obj)
-
-
-class DocStoreError(BlobStashError):
-    """Base error for the docstore modue."""
 
 
 class MissingIDError(DocStoreError):
@@ -419,34 +417,22 @@ class DocStoreClient:
         return collections
 
     def fadd_attachment(self, name=None, fileobj=None, content_type=None):
-        return add_attachment(self._client, name, fileobj, content_type)
+        return fadd_attachment(self._client, name, fileobj, content_type)
 
     def add_attachment(self, path):
-        """Upload the file at path, and return the key to embed the file as an attachment/filetree pointer.
+        """Upload the file/dir at path, and return the key to embed the file/dir as an attachment/filetree pointer.
 
         >>> doc['my_super_text_file'] = client.add_attachment('/path/to/my/text_file.txt')
 
         """
-        name = Path(path).name
-        with open(path, 'rb') as f:
-            return add_attachment(self._client, name, f, None)
+        return add_attachment(self._client, path)
 
     def fget_attachment(self, attachment):
         """Returns a fileobj (that needs to be closed) with the content off the attachment."""
-        return get_attachment(self._client, attachment)
+        return fget_attachment(self._client, attachment)
 
     def get_attachment(self, attachment, path):
-        with open(path, 'wb+') as dst:
-            f = self.fget_attachment(attachment)
-            try:
-                while 1:
-                    buf = f.read(4096)
-                    if not buf:
-                        break
-                    dst.write(buf)
-            except:
-                f.close()
-                raise
+        return get_attach(self._client, attachment, path)
 
     def __repr__(self):
         return 'blobstash.docstore.DocStoreClient(base_url={!r})'.format(self._client.base_url)
