@@ -90,7 +90,7 @@ class ID:
             del data['_created']
         if doc_id._updated:
             del data['_updated']
-        if doc_id._hash:
+        if doc_id._hash is not None:
             del data['_hash']
         data['_id'] = doc_id
         return doc_id
@@ -141,6 +141,7 @@ class ID:
 
 
 class DocVersionsIterator(BasePaginationIterator):
+
     def __init__(self, client, col_name, _id, params=None, limit=None):
         if isinstance(_id, ID):
             _id = _id.id()
@@ -166,14 +167,22 @@ class DocVersionsIterator(BasePaginationIterator):
 
 class DocsQueryIterator(BasePaginationIterator):
 
-    def __init__(self, client, collection, query, script='', stored_query='', stored_query_args='', params=None, limit=None):
+    def __init__(self, client, collection, query, script='', stored_query='', stored_query_args='', as_of='', params=None, limit=None):
         self.query = query
+        self.script = ''
+        # TODO supprt stored query
         self.collection = collection
+        self.as_of = as_of
 
         super().__init__(client=client, params=params, limit=limit)
 
     def do_req(self, params):
-        return self.collection._query(self.query, cursor=params.get('cursor'))
+        return self.collection._query(
+            self.query,
+            script=self.script,
+            cursor=params.get('cursor'),
+            as_of=self.as_of,
+        )
 
     def parse_data(self, resp):
         docs = []
@@ -321,7 +330,7 @@ class Collection:
 
             self._client.request('DELETE', '/api/docstore/'+self.name+'/'+_id)
 
-    def _query(self, query='', script='', stored_query='', stored_query_args='', limit=50, cursor=''):
+    def _query(self, query='', script='', stored_query='', stored_query_args='', as_of='', limit=50, cursor=''):
         # XXX(tsileo): intelligent limit (i.e. limit=1000, but want to query them 100 by 100)
         # Handle raw Lua script
         if isinstance(query, LuaScript):
@@ -337,6 +346,9 @@ class Collection:
         else:
             query = str(query)
 
+        if isinstance(as_of, datetime):
+            as_of = as_of.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+
         resp = self._client.request(
             'GET',
             '/api/docstore/'+self.name,
@@ -346,13 +358,14 @@ class Collection:
                 stored_query_args=stored_query_args,
                 stored_query=stored_query,
                 cursor=cursor,
+                as_of=as_of,
                 limit=str(limit),
             ),
         )
 
         return resp
 
-    def query(self, query='', script='', stored_query='', stored_query_args='', limit=50, cursor=''):
+    def query(self, query='', script='', stored_query='', stored_query_args='', as_of='', limit=50, cursor=''):
         """Query the collection and return an iterable cursor."""
         return DocsQueryIterator(
             self._client,
@@ -361,6 +374,7 @@ class Collection:
             script=script,
             stored_query=stored_query,
             stored_query_args=stored_query_args,
+            as_of=as_of,
         )
 
     def get(self, query='', script=''):
