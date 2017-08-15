@@ -46,7 +46,7 @@ def fget_attachment(client, attachment):
     """Returns a fileobj (that needs to be closed) with the content off the attachment."""
     node = attachment.node
     if node.is_dir():
-        raise DocStoreError('cannot get a fileobj for a directory')
+        raise DocStoreError('cannot get a fileobj for a directory, please use get_attachment instead')
 
     return FileTreeClient(client=client).fget_node(node)
 
@@ -55,5 +55,6 @@ def get_attachment(client, attachment, path):
     node = attachment.node
     if node.is_file():
         FileTreeClient(client=client).get_node(node, path)
+        return
 
     FileTreeClient(client=client).fs(ref=node.ref, prefix=_FILETREE_ATTACHMENT_FS_PREFIX).download(path)

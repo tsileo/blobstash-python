@@ -15,7 +15,7 @@ setup(
     license='MIT',
     install_requires=[
         'blobstash-base==0.0.4',
-        'blobstash-filetree==0.0.3',
+        'blobstash-filetree==0.0.4',
         'requests',
         'jsonpatch',
     ],
