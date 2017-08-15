@@ -7,13 +7,12 @@ _FILETREE_POINTER_FMT = '@filetree/ref:{}'
 class Attachment:
     """An attachment represents a file stored in FileTree and tied to the document via a pointer."""
 
-    def __init__(self, pointer, data):
-        self.pointer_type = 'filetree/ref'
+    def __init__(self, pointer, node):
         self.pointer = pointer
-        self.data = data
+        self.node = node
 
     def __repr__(self):
-        return 'blobstash.docstore.attachment.Attachment(pointer={!r}, data={!r})'.format(self.pointer, self.data)
+        return 'blobstash.docstore.attachment.Attachment(pointer={!r}, node={!r})'.format(self.pointer, self.node)
 
 
 def add_attachment(client, name, fileobj, content_type=None):
@@ -25,4 +24,4 @@ def add_attachment(client, name, fileobj, content_type=None):
 
 def get_attachment(client, attachment):
     """Returns a fileobj (that needs to be closed) with the content off the attachment."""
-    return FileTreeClient(client=client).fget_node(attachment.data)
+    return FileTreeClient(client=client).fget_node(attachment.node)
