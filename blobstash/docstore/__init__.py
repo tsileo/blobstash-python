@@ -6,6 +6,7 @@ import json
 
 from blobstash.base.client import Client
 from blobstash.base.error import BlobStashError
+from blobstash.base.iterator import BasePaginationIterator
 from blobstash.docstore.attachment import add_attachment
 from blobstash.docstore.attachment import get_attachment
 from blobstash.docstore.attachment import Attachment
@@ -19,8 +20,6 @@ from blobstash.docstore.query import LuaShortQueryComplex
 from blobstash.filetree import Node
 
 import jsonpatch
-
-# TODO(tsileo): list old document version
 
 # Keep a local cache of the docs to be able to generate a JSON Patch
 _DOC_CACHE = {}
@@ -141,46 +140,49 @@ class ID:
         return self._id
 
 
-class Cursor:
-    """Cursor is the query iterator, take care of going through the pagination."""
+class DocVersionsIterator(BasePaginationIterator):
+    def __init__(self, client, col_name, _id, params=None, limit=None):
+        if isinstance(_id, ID):
+            _id = _id.id()
 
-    def __init__(self, collection, query, resp, limit=None):
-        self._collection = collection
-        self._query = query
-        self._limit = limit
-        self._parse_resp(resp)
+        self._id = _id
+        self.col_name = col_name
+        super().__init__(client=client, params=params, limit=limit)
 
-    def _parse_resp(self, resp):
-        self.docs = []
+    def do_req(self, params):
+        return self._client.request('GET', '/api/docstore/'+self.col_name+'/'+self._id+'/_versions', params=params)
+
+    def parse_data(self, resp):
+        raw_docs = resp['data']
+        docs = []
+        pointers = resp['pointers']
+        for doc in raw_docs:
+            ID.inject(doc)
+            _fill_pointers(doc, pointers)
+            docs.append(_Document(doc))
+
+        return docs
+
+
+class DocsQueryIterator(BasePaginationIterator):
+
+    def __init__(self, client, collection, query, script='', stored_query='', stored_query_args='', params=None, limit=None):
+        self.query = query
+        self.collection = collection
+
+        super().__init__(client=client, params=params, limit=limit)
+
+    def do_req(self, params):
+        return self.collection._query(self.query, cursor=params.get('cursor'))
+
+    def parse_data(self, resp):
+        docs = []
         pointers = resp['pointers']
         for raw_doc in resp['data']:
             ID.inject(raw_doc)
             _fill_pointers(raw_doc, pointers)
-            self.docs.append(_Document(raw_doc))
-
-        pagination = resp['pagination']
-        self.has_more = pagination['has_more']
-        self.cursor = pagination['cursor']
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            doc = self.docs.pop(0)
-            return doc
-        except IndexError:
-            if not self.has_more:
-                raise StopIteration
-            resp = self._collection._query(self._query, cursor=self.cursor)
-            self._parse_resp(resp)
-            return next(self)
-
-    def __repr__(self):
-        return 'blobstash.docstore.Cursor(collection={!r})'.format(self._collection.name)
-
-    def __str__(self):
-        return self.__repr__()
+            docs.append(_Document(raw_doc))
+        return docs
 
 
 def _fill_pointers(doc, pointers):
@@ -283,6 +285,25 @@ class Collection:
 
         return _Document(doc)
 
+    def get_versions(self, _id):
+        return DocVersionsIterator(self._client, self.name, _id)
+
+        if isinstance(_id, ID):
+            _id = _id.id()
+
+        resp = self._client.request('GET', '/api/docstore/'+self.name+'/'+_id+'/_versions', params=dict(
+            limit=0,
+        ))
+        raw_docs = resp['data']
+        docs = []
+        pointers = resp['pointers']
+        for doc in raw_docs:
+            _id = ID.inject(doc)
+            _fill_pointers(doc, pointers)
+            docs.append(_Document(doc))
+
+        return docs
+
     def delete(self, doc_or_docs):
         """Delete the given document/list of document."""
         if isinstance(doc_or_docs, list):
@@ -333,14 +354,14 @@ class Collection:
 
     def query(self, query='', script='', stored_query='', stored_query_args='', limit=50, cursor=''):
         """Query the collection and return an iterable cursor."""
-        return Cursor(self, query, self._query(
+        return DocsQueryIterator(
+            self._client,
+            self,
             query,
             script=script,
             stored_query=stored_query,
             stored_query_args=stored_query_args,
-            limit=limit,
-            cursor=cursor,
-        ))
+        )
 
     def get(self, query='', script=''):
         """Return the first document matching the query."""

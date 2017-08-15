@@ -38,7 +38,7 @@ Documentation
 Resources
 ---------
 
-* `GitHub <https://github.com/tsileo/blobstash-python-docstore>`__
-* `PyPI <https://pypi.org/project/blobstash-docstore/>`__
+* `blobstash-docstore @ GitHub <https://github.com/tsileo/blobstash-python-docstore>`__
+* `blobstash-docstore @ PyPI <https://pypi.org/project/blobstash-docstore/>`__
 * `Issues <https://github.com/tsileo/blobstash-python-docstore/issues>`__
 * `BlobStash <https://github.com/tsileo/blobstash>`__

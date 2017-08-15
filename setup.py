@@ -19,7 +19,7 @@ setup(
         'requests',
         'jsonpatch',
     ],
-    python_requires='>=3.4',
+    python_requires='>=3.6',
     classifiers=[
         'Development Status :: 3 - Alpha',
 
@@ -28,8 +28,6 @@ setup(
         'License :: OSI Approved :: MIT License',
 
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
     keywords='blobstash DocStore client JSON Lua document store',
