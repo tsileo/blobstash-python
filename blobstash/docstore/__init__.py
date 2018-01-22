@@ -140,13 +140,13 @@ class ID:
 
 class DocVersionsIterator(BasePaginationIterator):
 
-    def __init__(self, client, col_name, _id, params=None, limit=None, cursor=None, per_page=None):
+    def __init__(self, client, col_name, _id, params=None, limit=None, cursor=None):
         if isinstance(_id, ID):
             _id = _id.id()
 
         self._id = _id
         self.col_name = col_name
-        super().__init__(client=client, params=params, limit=limit, cursor=cursor, per_page=per_page)
+        super().__init__(client=client, params=params, limit=limit, cursor=cursor)
 
     def do_req(self, params):
         return self._client.request('GET', '/api/docstore/'+self.col_name+'/'+self._id+'/_versions', params=params)
@@ -166,14 +166,14 @@ class DocVersionsIterator(BasePaginationIterator):
 class DocsQueryIterator(BasePaginationIterator):
 
     def __init__(self, client, collection, query, script='', stored_query='', stored_query_args='', as_of='',
-                 params=None, limit=None, per_page=None, cursor=None):
+                 params=None, limit=None, cursor=None):
         self.query = query
         self.script = ''
         # TODO supprt stored query
         self.collection = collection
         self.as_of = as_of
 
-        super().__init__(client=client, params=params, limit=limit, per_page=per_page, cursor=cursor)
+        super().__init__(client=client, params=params, limit=limit, cursor=cursor)
 
     def do_req(self, params):
         return self.collection._query(
@@ -365,8 +365,7 @@ class Collection:
 
         return resp
 
-    def query(self, query='', script='', stored_query='', stored_query_args='', as_of='', limit=50, cursor=None,
-              per_page=None):
+    def query(self, query='', script='', stored_query='', stored_query_args='', as_of='', limit=50, cursor=None):
         """Query the collection and return an iterable cursor."""
         return DocsQueryIterator(
             self._client,
@@ -378,7 +377,6 @@ class Collection:
             as_of=as_of,
             limit=limit,
             cursor=cursor,
-            per_page=per_page,
         )
 
     def get(self, query='', script=''):
