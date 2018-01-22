@@ -14,8 +14,8 @@ setup(
     packages=['blobstash.docstore'],
     license='MIT',
     install_requires=[
-        'blobstash-base==0.0.5',
-        'blobstash-filetree==0.0.6',
+        'blobstash-base==0.1.0',
+        'blobstash-filetree==0.1.0',
         'requests',
         'jsonpatch',
     ],

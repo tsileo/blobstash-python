@@ -146,10 +146,13 @@ class DocVersionsIterator(BasePaginationIterator):
 
         self._id = _id
         self.col_name = col_name
-        super().__init__(client=client, params=params, limit=limit, cursor=cursor)
-
-    def do_req(self, params):
-        return self._client.request('GET', '/api/docstore/'+self.col_name+'/'+self._id+'/_versions', params=params)
+        super().__init__(
+            client=client,
+            path='/api/docstore/'+self.col_name+'/'+self._id+'/_versions',
+            params=params,
+            limit=limit,
+            cursor=cursor
+        )
 
     def parse_data(self, resp):
         raw_docs = resp['data']
@@ -173,16 +176,33 @@ class DocsQueryIterator(BasePaginationIterator):
         self.collection = collection
         self.as_of = as_of
 
-        super().__init__(client=client, params=params, limit=limit, cursor=cursor)
+        # XXX(tsileo): intelligent limit (i.e. limit=1000, but want to query them 100 by 100)
+        # Handle raw Lua script
+        if isinstance(query, LuaScript):
+            script = query.script
+            query = ''
+        elif isinstance(query, LuaStoredQuery):
+            stored_query = query.name
+            stored_query_args = json.dumps(query.args)
 
-    def do_req(self, params):
-        return self.collection._query(
-            self.query,
-            script=self.script,
-            cursor=params.get('cursor'),
-            as_of=self.as_of,
-            limit=self.params.get('limit', 0),
+        # Handle default query operators
+        elif isinstance(query, (LogicalOperator, Not, LuaShortQueryComplex, LuaShortQuery)):
+            query = str(query)
+        else:
+            query = str(query)
+
+        if isinstance(as_of, datetime):
+            as_of = as_of.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+
+        params = dict(
+            query=query,
+            script=script,
+            stored_query_args=stored_query_args,
+            stored_query=stored_query,
+            as_of=as_of,
         )
+
+        super().__init__(client=client, path='/api/docstore/'+self.name, params=params, limit=limit, cursor=cursor)
 
     def parse_data(self, resp):
         docs = []
