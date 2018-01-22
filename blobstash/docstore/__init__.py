@@ -396,10 +396,10 @@ class DocStoreClient:
         self._client = Client(base_url=base_url, api_key=api_key, json_encoder=JSONEncoder)
 
     def __getitem__(self, key):
-        return self._collection(key)
+        return self.collection(key)
 
     def __getattr__(self, name):
-        return self._collection(name)
+        return self.collection(name)
 
     def collection(self, name):
         """Returns a `Collection` instance for the given name."""
