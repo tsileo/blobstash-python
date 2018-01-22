@@ -181,6 +181,7 @@ class DocsQueryIterator(BasePaginationIterator):
             script=self.script,
             cursor=params.get('cursor'),
             as_of=self.as_of,
+            limit=self.params.get('limit', 0),
         )
 
     def parse_data(self, resp):
