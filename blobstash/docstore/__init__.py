@@ -168,10 +168,10 @@ class DocVersionsIterator(BasePaginationIterator):
 
 class DocsQueryIterator(BasePaginationIterator):
 
-    def __init__(self, client, collection, query, script='', stored_query='', stored_query_args='', as_of='',
-                 params=None, limit=None, cursor=None):
+    def __init__(self, client, collection, query, script=None, stored_query=None, stored_query_args=None, as_of=None,
+                 params=None, limit=None, cursor=None, per_page=None):
         self.query = query
-        self.script = ''
+        self.script = None
         # TODO supprt stored query
         self.collection = collection
         self.as_of = as_of
@@ -180,7 +180,7 @@ class DocsQueryIterator(BasePaginationIterator):
         # Handle raw Lua script
         if isinstance(query, LuaScript):
             script = query.script
-            query = ''
+            query = None
         elif isinstance(query, LuaStoredQuery):
             stored_query = query.name
             stored_query_args = json.dumps(query.args)
@@ -189,7 +189,8 @@ class DocsQueryIterator(BasePaginationIterator):
         elif isinstance(query, (LogicalOperator, Not, LuaShortQueryComplex, LuaShortQuery)):
             query = str(query)
         else:
-            query = str(query)
+            if query:
+                query = str(query)
 
         if isinstance(as_of, datetime):
             as_of = as_of.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
@@ -207,7 +208,8 @@ class DocsQueryIterator(BasePaginationIterator):
             path='/api/docstore/'+self.collection.name,
             params=params,
             limit=limit,
-            cursor=cursor
+            cursor=cursor,
+            per_page=per_page,
         )
 
     def parse_data(self, resp):
@@ -356,42 +358,8 @@ class Collection:
 
             self._client.request('DELETE', '/api/docstore/'+self.name+'/'+_id)
 
-    def _query(self, query='', script='', stored_query='', stored_query_args='', as_of='', limit=50, cursor=''):
-        # XXX(tsileo): intelligent limit (i.e. limit=1000, but want to query them 100 by 100)
-        # Handle raw Lua script
-        if isinstance(query, LuaScript):
-            script = query.script
-            query = ''
-        elif isinstance(query, LuaStoredQuery):
-            stored_query = query.name
-            stored_query_args = json.dumps(query.args)
-
-        # Handle default query operators
-        elif isinstance(query, (LogicalOperator, Not, LuaShortQueryComplex, LuaShortQuery)):
-            query = str(query)
-        else:
-            query = str(query)
-
-        if isinstance(as_of, datetime):
-            as_of = as_of.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-
-        resp = self._client.request(
-            'GET',
-            '/api/docstore/'+self.name,
-            params=dict(
-                query=query,
-                script=script,
-                stored_query_args=stored_query_args,
-                stored_query=stored_query,
-                cursor=cursor,
-                as_of=as_of,
-                limit=str(limit),
-            ),
-        )
-
-        return resp
-
-    def query(self, query='', script='', stored_query='', stored_query_args='', as_of='', limit=50, cursor=None):
+    def query(self, query=None, script=None, stored_query=None, stored_query_args=None, as_of=None,
+              limit=None, cursor=None, per_page=None):
         """Query the collection and return an iterable cursor."""
         return DocsQueryIterator(
             self._client,
