@@ -1,4 +1,4 @@
-blobstash-base==0.0.4
-blobstash-filetree==0.0.4
+blobstash-base==0.0.5
+blobstash-filetree==0.0.6
 requests
 jsonpatch
