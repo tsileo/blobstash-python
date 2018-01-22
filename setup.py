@@ -5,7 +5,7 @@ with open('README.md') as f:
 
 setup(
     name='blobstash-docstore',
-    version='0.0.5',
+    version='0.0.6',
     description='BlobStash DocStore client',
     long_description=long_description,
     author='Thomas Sileo',
