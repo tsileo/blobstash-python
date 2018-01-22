@@ -202,7 +202,13 @@ class DocsQueryIterator(BasePaginationIterator):
             as_of=as_of,
         )
 
-        super().__init__(client=client, path='/api/docstore/'+self.name, params=params, limit=limit, cursor=cursor)
+        super().__init__(
+            client=client,
+            path='/api/docstore/'+self.collection.name,
+            params=params,
+            limit=limit,
+            cursor=cursor
+        )
 
     def parse_data(self, resp):
         docs = []
