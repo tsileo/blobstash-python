@@ -1,11 +1,11 @@
-from distutils.core import setup
+from setuptools import setup
 
 with open('README.md') as f:
     long_description = f.read()
 
 setup(
     name='blobstash-docstore',
-    version='0.0.1',
+    version='0.0.2',
     description='BlobStash DocStore client',
     long_description=long_description,
     author='Thomas Sileo',
@@ -14,8 +14,8 @@ setup(
     packages=['blobstash.docstore'],
     license='MIT',
     install_requires=[
-        'blobstash-base==0.0.4',
-        'blobstash-filetree==0.0.4',
+        'blobstash-base==0.0.5',
+        'blobstash-filetree==0.0.6',
         'requests',
         'jsonpatch',
     ],
