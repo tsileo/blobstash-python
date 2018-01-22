@@ -401,19 +401,16 @@ class DocStoreClient:
     def __getattr__(self, name):
         return self._collection(name)
 
-    def _collection(self, name):
-        return Collection(self._client, name)
-
     def collection(self, name):
         """Returns a `Collection` instance for the given name."""
-        return self._collection(self._client, name)
+        return Collection(self._client, name)
 
     def collections(self):
         """Returns all the available collections."""
         collections = []
         resp = self._client.request('GET', '/api/docstore/')
         for col in resp['collections']:
-            collections.append(self._collection(col))
+            collections.append(self.collection(col))
         return collections
 
     def fadd_attachment(self, name=None, fileobj=None, content_type=None):
