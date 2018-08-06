@@ -75,7 +75,7 @@ class ID:
         self._id = data.get('_id')
         self._created = data.get('_created')
         self._updated = data.get('_updated')
-        self._hash = data.get('_hash')
+        self._version = data.get('_version')
 
     @classmethod
     def inject(cls, data):
@@ -88,14 +88,14 @@ class ID:
             del data['_created']
         if doc_id._updated:
             del data['_updated']
-        if doc_id._hash is not None:
-            del data['_hash']
+        if doc_id._version is not None:
+            del data['_version']
         data['_id'] = doc_id
         return doc_id
 
-    def hash(self):
-        """Return the document hash/ETag."""
-        return self._hash
+    def version(self):
+        """Return the document version/ETag."""
+        return self._version
 
     def id(self):
         """Return the document ID (hex-encoded)."""
@@ -118,13 +118,13 @@ class ID:
         return dt.astimezone()
 
     def __hash__(self):
-        return hash((self._hash, self._id))
+        return hash((self._version, self._id))
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
 
-        return (self._hash, self._id) == (other.hash(), other.id())
+        return (self._version, self._id) == (other.version(), other.id())
 
     def __ne__(self, other):
         if not isinstance(other, self.__class__):
@@ -285,7 +285,7 @@ class Collection:
             resp = self._client.request(
                 'PATCH',
                 '/api/docstore/'+self.name+'/'+_id.id(),
-                headers={'If-Match': _id.hash()},
+                headers={'If-Match': _id.version()},
                 data=js,
             )
             doc_id = ID.inject(resp)
@@ -299,7 +299,7 @@ class Collection:
             resp = self._client.request(
                 'POST',
                 '/api/docstore/'+self.name+'/'+_id.id(),
-                headers={'If-Match': _id.hash()},
+                headers={'If-Match': _id.version()},
                 json=doc,
             )
             doc_id = ID.inject(resp)
