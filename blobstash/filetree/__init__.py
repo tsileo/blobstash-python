@@ -46,9 +46,9 @@ class Node:
         node = cls(
             name=node["name"],
             ref=node["ref"],
-            size=node["size"],
+            size=node.get("size"),
             type_=node["type"],
-            url=node["url"],
+            url=node.get("url"),
             metadata=node.get("metadata"),
             children=node.get("children"),
         )
