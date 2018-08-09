@@ -1,4 +1,5 @@
 from typing import Any
+from typing import Dict
 from copy import deepcopy
 from datetime import datetime
 from datetime import timezone
@@ -24,7 +25,7 @@ from blobstash.filetree import Node
 import jsonpatch
 
 # Keep a local cache of the docs to be able to generate a JSON Patch
-_DOC_CACHE = {}
+_DOC_CACHE: Dict[str, "_Document"] = {}
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -368,7 +369,7 @@ class Collection:
 
             self._client.request("DELETE", "/api/docstore/" + self.name + "/" + _id)
 
-    def map_reduce(self, map_: LuaScript, reduce_: LuaScript) -> Any:
+    def map_reduce(self, map_: LuaScript, reduce_: LuaScript) -> Dict[str, Dict[str, Any]]:
         payload = {"map": map_.script, "reduce": reduce_.script}
         resp = self._client.request(
             "POST", f"/api/docstore/{self.name}/_map_reduce", json=payload
