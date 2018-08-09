@@ -1,7 +1,6 @@
 from copy import deepcopy
 from datetime import datetime
 from datetime import timezone
-from pathlib import Path
 import json
 
 from blobstash.base.client import Client
@@ -48,20 +47,20 @@ class _Document(dict):
     JSON Patch generation if needed."""
 
     def __setitem__(self, key, val):
-        if key != '_id':
+        if key != "_id":
             self.checkpoint()
         dict.__setitem__(self, key, val)
 
     def checkpoint(self):
         """Force a checkpoint for the JSON Patch generation, can be use if the dict will be used to generate an object
         (the `__setitem__` will never get triggered this way)."""
-        _id = self.get('_id')
+        _id = self.get("_id")
         if _id is None:
             raise MissingIDError
 
         if _id not in _DOC_CACHE:
             doc = self.copy()
-            del doc['_id']
+            del doc["_id"]
             _DOC_CACHE[_id] = deepcopy(doc)
 
     def __repr__(self):
@@ -72,10 +71,10 @@ class ID:
     """ID holds the document ID along with metadata."""
 
     def __init__(self, data):
-        self._id = data.get('_id')
-        self._created = data.get('_created')
-        self._updated = data.get('_updated')
-        self._version = data.get('_version')
+        self._id = data.get("_id")
+        self._created = data.get("_created")
+        self._updated = data.get("_updated")
+        self._version = data.get("_version")
 
     @classmethod
     def inject(cls, data):
@@ -83,14 +82,14 @@ class ID:
         `_id` with an instance of `ID`."""
         doc_id = cls(data)
         if doc_id._id:
-            del data['_id']
+            del data["_id"]
         if doc_id._created:
-            del data['_created']
+            del data["_created"]
         if doc_id._updated:
-            del data['_updated']
+            del data["_updated"]
         if doc_id._version is not None:
-            del data['_version']
-        data['_id'] = doc_id
+            del data["_version"]
+        data["_id"] = doc_id
         return doc_id
 
     def version(self):
@@ -113,7 +112,7 @@ class ID:
         if dt_str is None:
             return
 
-        dt = datetime.strptime(dt_str, '%Y-%m-%dT%H:%M:%SZ')
+        dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%SZ")
         dt = dt.replace(tzinfo=timezone.utc)
         return dt.astimezone()
 
@@ -132,14 +131,13 @@ class ID:
         return not self.__eq__(other)
 
     def __repr__(self):
-        return 'blobstash.docstore.ID(_id={!r})'.format(self._id)
+        return "blobstash.docstore.ID(_id={!r})".format(self._id)
 
     def __str__(self):
         return self._id
 
 
 class DocVersionsIterator(BasePaginationIterator):
-
     def __init__(self, client, col_name, _id, params=None, limit=None, cursor=None):
         if isinstance(_id, ID):
             _id = _id.id()
@@ -148,16 +146,16 @@ class DocVersionsIterator(BasePaginationIterator):
         self.col_name = col_name
         super().__init__(
             client=client,
-            path='/api/docstore/'+self.col_name+'/'+self._id+'/_versions',
+            path="/api/docstore/" + self.col_name + "/" + self._id + "/_versions",
             params=params,
             limit=limit,
-            cursor=cursor
+            cursor=cursor,
         )
 
     def parse_data(self, resp):
-        raw_docs = resp['data']
+        raw_docs = resp["data"]
         docs = []
-        pointers = resp['pointers']
+        pointers = resp["pointers"]
         for doc in raw_docs:
             ID.inject(doc)
             _fill_pointers(doc, pointers)
@@ -167,9 +165,20 @@ class DocVersionsIterator(BasePaginationIterator):
 
 
 class DocsQueryIterator(BasePaginationIterator):
-
-    def __init__(self, client, collection, query, script=None, stored_query=None, stored_query_args=None, as_of=None,
-                 params=None, limit=None, cursor=None, per_page=None):
+    def __init__(
+        self,
+        client,
+        collection,
+        query,
+        script=None,
+        stored_query=None,
+        stored_query_args=None,
+        as_of=None,
+        params=None,
+        limit=None,
+        cursor=None,
+        per_page=None,
+    ):
         self.query = query
         self.script = None
         # TODO supprt stored query
@@ -186,14 +195,16 @@ class DocsQueryIterator(BasePaginationIterator):
             stored_query_args = json.dumps(query.args)
 
         # Handle default query operators
-        elif isinstance(query, (LogicalOperator, Not, LuaShortQueryComplex, LuaShortQuery)):
+        elif isinstance(
+            query, (LogicalOperator, Not, LuaShortQueryComplex, LuaShortQuery)
+        ):
             query = str(query)
         else:
             if query:
                 query = str(query)
 
         if isinstance(as_of, datetime):
-            as_of = as_of.astimezone(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+            as_of = as_of.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
         params = dict(
             query=query,
@@ -205,7 +216,7 @@ class DocsQueryIterator(BasePaginationIterator):
 
         super().__init__(
             client=client,
-            path='/api/docstore/'+self.collection.name,
+            path="/api/docstore/" + self.collection.name,
             params=params,
             limit=limit,
             cursor=cursor,
@@ -214,8 +225,8 @@ class DocsQueryIterator(BasePaginationIterator):
 
     def parse_data(self, resp):
         docs = []
-        pointers = resp['pointers']
-        for raw_doc in resp['data']:
+        pointers = resp["pointers"]
+        for raw_doc in resp["data"]:
             ID.inject(raw_doc)
             _fill_pointers(raw_doc, pointers)
             docs.append(_Document(raw_doc))
@@ -226,7 +237,7 @@ def _fill_pointers(doc, pointers):
     """Replace the pointer by actual object representation."""
     for k, v in doc.items():
         if isinstance(v, str):
-            if v.startswith('@filetree/ref:'):
+            if v.startswith("@filetree/ref:"):
                 doc[k] = Attachment(v, Node.from_resp(pointers[v]))
         elif isinstance(v, dict):
             _fill_pointers(v, pointers)
@@ -244,7 +255,7 @@ class Collection:
         if not isinstance(doc, dict):
             raise NotADocumentError
 
-        if '_id' in doc and isinstance(doc['_id'], ID):
+        if "_id" in doc and isinstance(doc["_id"], ID):
             return self.update(doc)
 
         # TODO(tsileo): bulk insert
@@ -253,16 +264,12 @@ class Collection:
             for d in doc:
                 self._insert(d)
 
-        resp = self._client.request(
-            'POST',
-            '/api/docstore/'+self.name,
-            json=doc,
-        )
+        resp = self._client.request("POST", "/api/docstore/" + self.name, json=doc)
         doc_id = ID.inject(resp)
 
-        doc['_id'] = doc_id
+        doc["_id"] = doc_id
         rdoc = doc.copy()
-        del rdoc['_id']
+        del rdoc["_id"]
 
         _DOC_CACHE[doc_id] = deepcopy(rdoc)
 
@@ -270,10 +277,10 @@ class Collection:
 
     def update(self, doc):
         """Update the given document/list of documents."""
-        _id = doc.get('_id')
+        _id = doc.get("_id")
         if _id is None:
             raise MissingIDError
-        del doc['_id']
+        del doc["_id"]
         if _id in _DOC_CACHE:
             src = _DOC_CACHE[_id]
             pdoc = json.loads(json.dumps(doc, cls=JSONEncoder))
@@ -283,29 +290,29 @@ class Collection:
             js = p.to_string()
 
             resp = self._client.request(
-                'PATCH',
-                '/api/docstore/'+self.name+'/'+_id.id(),
-                headers={'If-Match': _id.version()},
+                "PATCH",
+                "/api/docstore/" + self.name + "/" + _id.id(),
+                headers={"If-Match": _id.version()},
                 data=js,
             )
             doc_id = ID.inject(resp)
-            doc['_id'] = doc_id
+            doc["_id"] = doc_id
             rdoc = doc.copy()
-            del rdoc['_id']
+            del rdoc["_id"]
             _DOC_CACHE[doc_id] = deepcopy(rdoc)
             return doc_id
             # FIXME(tsileo): catch status 412
         else:
             resp = self._client.request(
-                'POST',
-                '/api/docstore/'+self.name+'/'+_id.id(),
-                headers={'If-Match': _id.version()},
+                "POST",
+                "/api/docstore/" + self.name + "/" + _id.id(),
+                headers={"If-Match": _id.version()},
                 json=doc,
             )
             doc_id = ID.inject(resp)
-            doc['_id'] = doc_id
+            doc["_id"] = doc_id
             rdoc = doc.copy()
-            del rdoc['_id']
+            del rdoc["_id"]
             _DOC_CACHE[doc_id] = deepcopy(rdoc)
             return doc_id
 
@@ -314,9 +321,9 @@ class Collection:
         if isinstance(_id, ID):
             _id = _id.id()
 
-        resp = self._client.request('GET', '/api/docstore/'+self.name+'/'+_id)
-        doc = resp['data']
-        pointers = resp['pointers']
+        resp = self._client.request("GET", "/api/docstore/" + self.name + "/" + _id)
+        doc = resp["data"]
+        pointers = resp["pointers"]
         _id = ID.inject(doc)
         _fill_pointers(doc, pointers)
 
@@ -328,12 +335,14 @@ class Collection:
         if isinstance(_id, ID):
             _id = _id.id()
 
-        resp = self._client.request('GET', '/api/docstore/'+self.name+'/'+_id+'/_versions', params=dict(
-            limit=0,
-        ))
-        raw_docs = resp['data']
+        resp = self._client.request(
+            "GET",
+            "/api/docstore/" + self.name + "/" + _id + "/_versions",
+            params=dict(limit=0),
+        )
+        raw_docs = resp["data"]
         docs = []
-        pointers = resp['pointers']
+        pointers = resp["pointers"]
         for doc in raw_docs:
             _id = ID.inject(doc)
             _fill_pointers(doc, pointers)
@@ -348,7 +357,7 @@ class Collection:
         for doc in docs:
             if isinstance(doc, dict):
                 try:
-                    _id = doc['_id']
+                    _id = doc["_id"]
                 except KeyError:
                     raise MissingIDError
             elif isinstance(_id, ID):
@@ -356,10 +365,19 @@ class Collection:
             else:
                 raise NotADocumentError
 
-            self._client.request('DELETE', '/api/docstore/'+self.name+'/'+_id)
+            self._client.request("DELETE", "/api/docstore/" + self.name + "/" + _id)
 
-    def query(self, query=None, script=None, stored_query=None, stored_query_args=None, as_of=None,
-              limit=None, cursor=None, per_page=None):
+    def query(
+        self,
+        query=None,
+        script=None,
+        stored_query=None,
+        stored_query_args=None,
+        as_of=None,
+        limit=None,
+        cursor=None,
+        per_page=None,
+    ):
         """Query the collection and return an iterable cursor."""
         return DocsQueryIterator(
             self._client,
@@ -373,7 +391,7 @@ class Collection:
             cursor=cursor,
         )
 
-    def get(self, query='', script=''):
+    def get(self, query="", script=""):
         """Return the first document matching the query."""
         for doc in self.query(query, script=script, limit=1):
             return doc
@@ -381,7 +399,7 @@ class Collection:
         return None
 
     def __repr__(self):
-        return 'blobstash.docstore.Collection(name={!r})'.format(self.name)
+        return "blobstash.docstore.Collection(name={!r})".format(self.name)
 
     def __str__(self):
         return self.__repr__()
@@ -391,7 +409,9 @@ class DocStoreClient:
     """BlobStash DocStore client."""
 
     def __init__(self, base_url=None, api_key=None):
-        self._client = Client(base_url=base_url, api_key=api_key, json_encoder=JSONEncoder)
+        self._client = Client(
+            base_url=base_url, api_key=api_key, json_encoder=JSONEncoder
+        )
 
     def __getitem__(self, key):
         return self.collection(key)
@@ -406,8 +426,8 @@ class DocStoreClient:
     def collections(self):
         """Returns all the available collections."""
         collections = []
-        resp = self._client.request('GET', '/api/docstore/')
-        for col in resp['collections']:
+        resp = self._client.request("GET", "/api/docstore/")
+        for col in resp["collections"]:
             collections.append(self.collection(col))
         return collections
 
@@ -430,7 +450,9 @@ class DocStoreClient:
         return get_attach(self._client, attachment, path)
 
     def __repr__(self):
-        return 'blobstash.docstore.DocStoreClient(base_url={!r})'.format(self._client.base_url)
+        return "blobstash.docstore.DocStoreClient(base_url={!r})".format(
+            self._client.base_url
+        )
 
     def __str__(self):
         return self.__repr__()

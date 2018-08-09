@@ -1,6 +1,12 @@
+# Cache
 _build/
 .cache/
 docs/_build
 __pycache__
 .ropeproject
+*_cache/
+
+# Packaging
 build/
+dist/
+*.egg-info
