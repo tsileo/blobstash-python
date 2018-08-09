@@ -5,13 +5,15 @@
 &nbsp; &nbsp; [![PyPI](https://img.shields.io/pypi/pyversions/blobstash-docstore.svg)](https://pypi.python.org/pypi/blobstash)
 &nbsp; &nbsp; [![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://blobstash-python-docstore.a4.io/)
 &nbsp; &nbsp; [![License](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/tsileo/blobstash-python/master/LICENSE)
-<a href="https://github.com/ambv/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+&nbsp; &nbsp; <a href="https://github.com/ambv/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
-Client for [BlobStash](https://github.com/tsileo/blobstash) JSON document store.
+Client for [BlobStash](https://github.com/tsileo/blobstash).
 
 See the [documentation](https://blobstash-python-docstore.a4.io/) for more details.
 
 ## Examples
+
+### Document Store
 
 ```python
 >>> from blobstash.docstore import DocStoreClient, Path, Q
