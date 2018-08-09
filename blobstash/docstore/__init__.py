@@ -1,5 +1,6 @@
 from typing import Any
 from typing import Dict
+from typing import Optional
 from copy import deepcopy
 from datetime import datetime
 from datetime import timezone
@@ -48,12 +49,12 @@ class _Document(dict):
     """Document is a dict subclass for document returned by the API, keep track of the ETag, and the document for the
     JSON Patch generation if needed."""
 
-    def __setitem__(self, key, val):
+    def __setitem__(self, key, val) -> None:
         if key != "_id":
             self.checkpoint()
         dict.__setitem__(self, key, val)
 
-    def checkpoint(self):
+    def checkpoint(self) -> None:
         """Force a checkpoint for the JSON Patch generation, can be use if the dict will be used to generate an object
         (the `__setitem__` will never get triggered this way)."""
         _id = self.get("_id")
@@ -63,7 +64,7 @@ class _Document(dict):
         if _id not in _DOC_CACHE:
             doc = self.copy()
             del doc["_id"]
-            _DOC_CACHE[_id] = deepcopy(doc)
+            _DOC_CACHE[_id] = deepcopy(doc)  # type: ignore
 
     def __repr__(self):
         return dict.__repr__(self)
@@ -72,7 +73,7 @@ class _Document(dict):
 class ID:
     """ID holds the document ID along with metadata."""
 
-    def __init__(self, data):
+    def __init__(self, data) -> None:
         self._id = data.get("_id")
         self._created = data.get("_created")
         self._updated = data.get("_updated")
@@ -94,25 +95,25 @@ class ID:
         data["_id"] = doc_id
         return doc_id
 
-    def version(self):
+    def version(self) -> str:
         """Return the document version/ETag."""
         return self._version
 
-    def id(self):
+    def id(self) -> str:
         """Return the document ID (hex-encoded)."""
         return self._id
 
-    def created(self):
+    def created(self) -> Optional[datetime]:
         """Return a datetime representing the document creation date (i.e. the first version)."""
         return self._parse_dt(self._created)
 
-    def updated(self):
+    def updated(self) -> Optional[datetime]:
         """Return a datetime representing the document current version creation date."""
         return self._parse_dt(self._updated)
 
-    def _parse_dt(self, dt_str):
+    def _parse_dt(self, dt_str: Optional[str]) -> Optional[datetime]:
         if dt_str is None:
-            return
+            return None
 
         dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%SZ")
         dt = dt.replace(tzinfo=timezone.utc)
@@ -369,7 +370,9 @@ class Collection:
 
             self._client.request("DELETE", "/api/docstore/" + self.name + "/" + _id)
 
-    def map_reduce(self, map_: LuaScript, reduce_: LuaScript) -> Dict[str, Dict[str, Any]]:
+    def map_reduce(
+        self, map_: LuaScript, reduce_: LuaScript
+    ) -> Dict[str, Dict[str, Any]]:
         payload = {"map": map_.script, "reduce": reduce_.script}
         resp = self._client.request(
             "POST", f"/api/docstore/{self.name}/_map_reduce", json=payload
@@ -417,7 +420,7 @@ class Collection:
 class DocStoreClient:
     """BlobStash DocStore client."""
 
-    def __init__(self, base_url=None, api_key=None):
+    def __init__(self, base_url: str = None, api_key: str = None) -> None:
         self._client = Client(
             base_url=base_url, api_key=api_key, json_encoder=JSONEncoder
         )
