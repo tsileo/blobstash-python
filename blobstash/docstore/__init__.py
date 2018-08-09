@@ -1,3 +1,4 @@
+from typing import Any
 from copy import deepcopy
 from datetime import datetime
 from datetime import timezone
@@ -366,6 +367,13 @@ class Collection:
                 raise NotADocumentError
 
             self._client.request("DELETE", "/api/docstore/" + self.name + "/" + _id)
+
+    def map_reduce(self, map_: LuaScript, reduce_: LuaScript) -> Any:
+        payload = {"map": map_.script, "reduce": reduce_.script}
+        resp = self._client.request(
+            "POST", f"/api/docstore/{self.name}/_map_reduce", json=payload
+        )
+        return resp["data"]
 
     def query(
         self,
