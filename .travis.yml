@@ -8,7 +8,6 @@ install:
   - eval "$(curl -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme | GIMME_GO_VERSION=1.12 bash)"
   - git clone https://github.com/tsileo/blobstash.git bs && cd bs && go build -mod=vendor && cp -r blobstash ${TRAVIS_BUILD_DIR}/bin && cd -
   - export PATH="${TRAVIS_BUILD_DIR}/bin:$PATH"
-  - blobstash -h
   # Setup the Python package
   - pip install -r requirements.txt
   - pip install -r dev-requirements.txt
