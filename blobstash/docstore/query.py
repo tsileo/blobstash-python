@@ -64,7 +64,7 @@ class LuaShortQuery:
 
     def query(self):
         return "match(doc, '{}', '{}', {})".format(
-            self.key, self.operator, _lua_repr(self.value)
+            self.key, self.operator, self.value
         )
 
     def __str__(self):
