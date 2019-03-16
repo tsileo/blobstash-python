@@ -9,14 +9,12 @@
 
 Client for [BlobStash](https://github.com/tsileo/blobstash).
 
-See the [documentation](https://blobstash-python-docstore.a4.io/) for more details.
-
 ## Examples
 
 ### Document Store
 
 ```python
->>> from blobstash.docstore import DocStoreClient, Path, Q
+>>> from blobstash.docstore import DocStoreClient, Q
 >>> client = DocStoreClient(api_key='123')
 >>> col = client.my_collection
 >>> col
