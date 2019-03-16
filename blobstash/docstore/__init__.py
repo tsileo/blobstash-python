@@ -371,11 +371,11 @@ class Collection:
             self._client.request("DELETE", "/api/docstore/" + self.name + "/" + _id)
 
     def map_reduce(
-        self, map_: LuaScript, reduce_: LuaScript
+        self, map_: LuaScript, reduce_: LuaScript, as_of: str = '',
     ) -> Dict[str, Dict[str, Any]]:
         payload = {"map": map_.script, "reduce": reduce_.script}
         resp = self._client.request(
-            "POST", f"/api/docstore/{self.name}/_map_reduce", json=payload
+            "POST", f"/api/docstore/{self.name}/_map_reduce?as_of={as_of}", json=payload
         )
         return resp["data"]
 

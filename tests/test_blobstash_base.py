@@ -103,14 +103,6 @@ def test_kvstore_client():
                 assert kv == keys[key][KV_VERSIONS_COUNT - (1 + i)]
 
         b.shutdown()
-        for f in [
-            "blobstash_data/.80a3e998d3248e3f44c5c608fd8dc813e00567a3",
-            "blobstash_data/.82481ffa006d3077c01fb135f375eaa25816881c",
-            "blobstash_data/.e7ecafda402e922e0fcefb3741538bd152c35405",
-            "blobstash_data/vkv",
-        ]:
-            os.unlink(f)
-
         b.run(reindex=True)
 
         for key in keys.keys():
