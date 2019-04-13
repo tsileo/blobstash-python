@@ -1,6 +1,6 @@
 # BlobStash Python Client
 
-[![Travis](https://img.shields.io/travis/tsileo/blobstash-python-docstore.svg?maxAge=2592000)](https://travis-ci.org/tsileo/blobstash-python)
+[![CI](https://d.a4.io/api/badges/tsileo/blobstash-python/status.svg)](https://d.a4.io/tsileo/blobstash-python)
 &nbsp; &nbsp; [![PyPI](https://img.shields.io/pypi/v/blobstash-docstore.svg)](https://pypi.python.org/pypi/blobstash)
 &nbsp; &nbsp; [![PyPI](https://img.shields.io/pypi/pyversions/blobstash-docstore.svg)](https://pypi.python.org/pypi/blobstash)
 &nbsp; &nbsp; [![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://blobstash-python-docstore.a4.io/)
