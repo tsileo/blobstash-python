@@ -9,17 +9,19 @@ tasks:
 - setup: |
    mkdir go
    export GOPATH=/home/build/go
-   wget https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz
+   wget -q https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz
    sudo tar -C /usr/local -xzf go1.13.4.linux-amd64.tar.gz
-- test: |
+- blobstash: |
    export GOPATH=/home/build/go
    cd blobstash
    /usr/local/go/bin/go install -mod=vendor
-   /usr/local/go/bin/go test -v -mod=vendor ./...
+- test: |
    export PATH=$PATH:$GOPATH/bin/
-   cd
    cd blobstash-python
    pip3 install black flake8 mypy
    python3 -m black --check .
-   python3 -m flake8 .
-   python3 -m mypy --ignore-missing-imports cli.py
+   python3 -m flake8 blobstash
+   python3 -m mypy --ignore-missing-imports blobstash
+   python setup.py install
+   pip3 install -r dev-requirements.txt
+   python3 -m pytest -k test_utils -v
