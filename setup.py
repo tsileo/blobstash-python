@@ -10,7 +10,7 @@ setup(
     long_description=long_description,
     author="Thomas Sileo",
     author_email="t@a4.io",
-    url="https://github.com/tsileo/blobstash-python",
+    url="https://git.sr.ht/~tsileo/blobstash-python",
     packages=["blobstash.docstore", "blobstash.base", "blobstash.filetree"],
     license="MIT",
     zip_safe=False,
