@@ -1,13 +1,12 @@
 # BlobStash Python Client
 
-[![CI](https://d.a4.io/api/badges/tsileo/blobstash-python/status.svg)](https://d.a4.io/tsileo/blobstash-python)
+[![builds.sr.ht status](https://builds.sr.ht/~tsileo/blobstash-python.svg)](https://builds.sr.ht/~tsileo/blobstash-python?)
 &nbsp; &nbsp; [![PyPI](https://img.shields.io/pypi/v/blobstash-docstore.svg)](https://pypi.python.org/pypi/blobstash)
 &nbsp; &nbsp; [![PyPI](https://img.shields.io/pypi/pyversions/blobstash-docstore.svg)](https://pypi.python.org/pypi/blobstash)
-&nbsp; &nbsp; [![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://blobstash-python-docstore.a4.io/)
-&nbsp; &nbsp; [![License](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/tsileo/blobstash-python/master/LICENSE)
+&nbsp; &nbsp; [![License](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://git.sr.ht/~tsileo/blobstash-python/tree/master/LICENSE)
 &nbsp; &nbsp; <a href="https://github.com/ambv/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
-Client for [BlobStash](https://github.com/tsileo/blobstash).
+Client for [BlobStash](https://git.sr.ht/~tsileo/blobstash).
 
 ## Examples
 
