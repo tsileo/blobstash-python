@@ -238,12 +238,24 @@ class DocsQueryIterator(BasePaginationIterator):
 
 def _fill_pointers(doc, pointers):
     """Replace the pointer by actual object representation."""
+    if not isinstance(doc, dict):
+        return
+
     for k, v in doc.items():
         if isinstance(v, str):
             if v.startswith("@filetree/ref:"):
                 doc[k] = Attachment(v, Node.from_resp(pointers[v]))
         elif isinstance(v, dict):
             _fill_pointers(v, pointers)
+        elif isinstance(v, list):
+            doc[k] = [
+                Attachment(item, Node.from_resp(pointers[item]))
+                if isinstance(item, str) and item.startswith("@filetree/ref:")
+                else item
+                for item in v
+            ]
+            for item in doc[k]:
+                _fill_pointers(item, pointers)
 
 
 class Collection:
