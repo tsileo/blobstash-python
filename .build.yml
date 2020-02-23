@@ -9,8 +9,8 @@ tasks:
 - go: |
    mkdir go
    export GOPATH=/home/build/go
-   wget -q https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz
-   sudo tar -C /usr/local -xzf go1.13.4.linux-amd64.tar.gz
+   wget -q https://dl.google.com/go/go1.13.8.linux-amd64.tar.gz
+   sudo tar -C /usr/local -xzf go1.13.8.linux-amd64.tar.gz
 - blobstash: |
    export GOPATH=/home/build/go
    cd blobstash

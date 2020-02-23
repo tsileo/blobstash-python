@@ -367,16 +367,19 @@ class Collection:
 
     def delete(self, doc_or_docs):
         """Delete the given document/list of document."""
-        if isinstance(doc_or_docs, list):
+        if not isinstance(doc_or_docs, list):
             docs = [doc_or_docs]
+
         for doc in docs:
             if isinstance(doc, dict):
                 try:
-                    _id = doc["_id"]
+                    _id = doc["_id"].id()
                 except KeyError:
                     raise MissingIDError
-            elif isinstance(_id, ID):
-                _id = _id.id()
+            elif isinstance(doc, ID):
+                _id = doc.id()
+            elif isinstance(doc, str):
+                _id = doc
             else:
                 raise NotADocumentError
 
