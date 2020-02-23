@@ -1,7 +1,4 @@
 """BlobStash client."""
-from typing import Any
-from typing import Dict
-from typing import Optional
 import json
 import os
 from urllib.parse import urljoin
@@ -9,8 +6,6 @@ from urllib.parse import urljoin
 import requests
 
 DEFAULT_BASE_URL = "http://localhost:8050"
-
-_JSON = Dict[str, Any]
 
 
 class Client:
@@ -21,7 +16,7 @@ class Client:
         self.api_key = api_key or os.getenv("BLOBSTASH_API_KEY")
         self.json_encoder = json_encoder
 
-    def request(self, verb: str, path: str, **kwargs) -> Optional[_JSON]:
+    def request(self, verb: str, path: str, **kwargs):
         """Helper for making authenticated request to BlobStash."""
         raw = kwargs.pop("raw", False)
         json_data = kwargs.pop("json", None)
